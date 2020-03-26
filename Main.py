@@ -15,6 +15,13 @@ Suche_nach_Koautoren = True
 OA_Status_Erstautoren = True
 OA_Status_Koautoren = True
 
+#Ermöglicht eine Aufzählung welche Journals in einem OA-Status vorkommen und wie oft
+Journal_Analyse_Erstautoren = True
+Journal_Analyse_Koautoren = True
+#Ermöglicht eine Aufzählung welche Disziplinen vorkommen und wie oft
+Disziplinen_Analyse_Erstautoren = True
+Disziplinen_Analyse_Koautoren = True
+
 #-----------------------REGEX-PATTERN
 
 
@@ -53,7 +60,25 @@ with open('./Zusammengeführte_BibTex_Files/collection.bib') as bibtex_file:
 
 bib_database = bibtexparser.loads(bibtex_str)
 
+#---------------------LISTEN-RANKING-FUNKTION
+""""
+Die Funktion 'Listen_Ranking' erstellt ein Dictionary aus den Werten einer Liste,
+zählt die Häufigkeit dieser und gibt diese als 'Value' im Dictionary wieder.
 
+Die Variable welche die zu verarbeitende Liste enthält wird dem Funktionsaufruf 
+übergeben.
+
+"""
+
+def Listen_Ranking(v):
+    z = 0
+    counter = []
+    for x in v:
+        x = v.count(v[z])
+        z += 1
+        counter.append(x)
+        dictionary = dict(zip(v, counter))
+    return(dictionary)
 #-----------------------ERSTAUTOREN-FILTER-FUNKTION
 
 
@@ -67,9 +92,10 @@ def Filtern_der_Erstautoren(a):
     return Erstautoren_Collection
 
 #------AKTIVIEREN-DER-ERSTAUTOREN-FUNKTION
+
 if Suche_nach_Erstautoren is True:
     Erstautoren = Filtern_der_Erstautoren(bib_database.entries)
-    print('gefundene erstautoren Einträge ' + str(len(Erstautoren)) + '\n')
+    print('\n' + 'gefundene Erstautoren Einträge ' + str(len(Erstautoren)) + '\n')
 
 
 #-----------------------KOAUTOREN-FILTER-FUNKTION
@@ -85,14 +111,14 @@ def Filtern_der_Koautoren(b):
     return Koautoren_Collection
 
 #------AKTIVIEREN-DER-KOAUTOREN-FUNKTION
+
 if Suche_nach_Koautoren is True:
-    Kotautoren = Filtern_der_Koautoren(bib_database.entries)
-
-
+    Koautoren  = Filtern_der_Koautoren(bib_database.entries)
+    print('\n' + 'gefundene Koautoren Einträge ' + str(len(Koautoren)) + '\n')
 
 #-----------------------OA-STATUS-FILTER
 '''
-PROBLEM: Momentan landen Mehrfachzuweiseungen von OA Status in OA_Other, zeichnet ungenaues Bild 
+PROBLEM: Momentan landen Mehrfachzuweisungen von OA Status in OA_Other, zeichnet ungenaues Bild, 
 die meisten Fälle weisen eine Zuweisung von "{DOAJ Gold, Green Accepted, Green Published}" aber auch "{Other Gold}" 
 und "{DOAJ Gold}"auf.
 '''
@@ -127,32 +153,99 @@ def Filter_OA_Status(c):
                     OA_Other.append(dict)
     return OA_Other_Gold, OA_Doaj_Gold, OA_Green_Published, OA_Bronze, OA_Other
 
-a,b,c,d,e = Filter_OA_Status(Erstautoren)
 
+#-------AKTIVIEREN DER OA-FILTER-FUNKTION
 
 if OA_Status_Erstautoren is True:
     OA_OtherGold_Erstautoren, OA_DoajGold_Erstautoren, OA_GreenPublished_Erstautoren, OA_Bronze_Erstautoren, OA_Other_Erstautoren = Filter_OA_Status(Erstautoren)
 
+
 if OA_Status_Koautoren is True:
-    OA_OtherGold_Koautoren, OA_DoajGold_Koautoren, OA_GreenPublished_Koautoren, OA_Bronze_Koautoren, OA_Other_Koautoren = Filter_OA_Status(Kotautoren)
+    OA_OtherGold_Koautoren, OA_DoajGold_Koautoren, OA_GreenPublished_Koautoren, OA_Bronze_Koautoren, OA_Other_Koautoren = Filter_OA_Status(Koautoren)
+
+#----------------------FILTER-NACH-JOURNAL
 
 
+def Collect_Journal(d):
+    TempList = []
+    for dict in d:
+        add=dict.get('journal')
+        if add is not None:
+            TempList.append(add)
+            x=Listen_Ranking(TempList)
+    return x
+
+if Journal_Analyse_Erstautoren is True:
+    Journal_Other_Gold_Erstautoren = Collect_Journal(OA_OtherGold_Erstautoren)
+    Journal_Doaj_Gold_Erstautoren = Collect_Journal(OA_DoajGold_Erstautoren)
+    Journal_Green_Published_Erstautoren = Collect_Journal(OA_GreenPublished_Erstautoren)
+    Journal_Bronze_Erstautoren = Collect_Journal(OA_Bronze_Erstautoren)
+    Journal_Other_Erstautoren = Collect_Journal(OA_Other_Erstautoren)
+
+if Journal_Analyse_Koautoren is True:
+    Journal_Other_Gold_Koautoren = Collect_Journal(OA_OtherGold_Koautoren)
+    Journal_Doaj_Gold_Koautoren = Collect_Journal(OA_DoajGold_Koautoren)
+    Journal_Green_Published_Koautoren = Collect_Journal(OA_GreenPublished_Koautoren)
+    Journal_Bronze_Koautoren = Collect_Journal(OA_Bronze_Koautoren)
+    Journal_Other_Koautoren = Collect_Journal(OA_Other_Koautoren)
 
 
+#---------------------FILTERN NACH DISZIPLIN
+
+
+def Collect_Research_Areas(e):
+    DisziplinenTempList = []
+    for dict in e:
+        add=dict.get('research-areas')
+        if add is not None:
+            DisziplinenTempList.append(add)
+            x=Listen_Ranking(DisziplinenTempList)
+    return x
+
+if Disziplinen_Analyse_Erstautoren is True:
+    Disziplin_Other_Gold_Erstautoren = Collect_Research_Areas(OA_Other_Erstautoren)
+    Disziplin_Doaj_Gold_Erstautoren = Collect_Research_Areas(OA_DoajGold_Erstautoren)
+    Disziplin_Green_Published_Erstautoren = Collect_Research_Areas(OA_GreenPublished_Erstautoren)
+    Disziplin_Bronze_Erstautoren = Collect_Research_Areas(OA_Bronze_Erstautoren)
+    Disziplin_Other_Erstautoren = Collect_Research_Areas(OA_Other_Erstautoren)
+
+if Disziplinen_Analyse_Koautoren is True:
+    Disziplin_Other_Gold_Koautoren = Collect_Research_Areas(OA_Other_Koautoren)
+    Disziplin_Doaj_Gold_Koautoren = Collect_Research_Areas(OA_DoajGold_Koautoren)
+    Disziplin_Green_Published_Koautoren = Collect_Research_Areas(OA_GreenPublished_Koautoren)
+    Disziplin_Bronze_Koautoren = Collect_Research_Areas(OA_Bronze_Koautoren)
+    Disziplin_Other_Koautoren = Collect_Research_Areas(OA_Other_Koautoren)
 #------Prints
 
 #pprint.pprint(OA_GreenPublished_Koautoren)
 print('OA-Status der Erstautoren: ')
 print('Other Gold Erstautoren ' + str(len(OA_OtherGold_Erstautoren)))
+print('Journals: ' + str(Journal_Other_Gold_Erstautoren))
+print('Disziplinen: ' + str(Disziplin_Other_Gold_Erstautoren))
 print('DOAJ GOLD Erstautoren ' + str(len(OA_DoajGold_Erstautoren)))
+print('Journals: ' + str(Journal_Doaj_Gold_Erstautoren))
+print('Disziplinen: ' + str(Disziplin_Doaj_Gold_Erstautoren))
 print('GreenPublished Erstautoren ' + str(len(OA_GreenPublished_Erstautoren)))
+print('Journals: ' + str(Journal_Green_Published_Erstautoren))
+print('Disziplinen: ' + str(Disziplin_Green_Published_Erstautoren))
 print('Bronze Erstautoren ' + str(len(OA_Bronze_Erstautoren)))
-print('Other Erstautoren ' + str(len(OA_Other_Erstautoren)) + '\n')
+print('Journals: ' + str(Journal_Bronze_Erstautoren))
+print('Disziplinen: ' + str(Disziplin_Bronze_Erstautoren))
+print('Other Erstautoren ' + str(len(OA_Other_Erstautoren)))
+print('Journals: ' + str(Journal_Other_Erstautoren))
+print('Disziplinen: ' + str(Disziplin_Other_Gold_Erstautoren) + '\n')
+
+print('Koautoren: ')
 print('OA-Status der Koautoren: ')
 print('Other Gold Koautoren ' + str(len(OA_OtherGold_Koautoren)))
+print('Journals: ' + str(Journal_Other_Gold_Koautoren))
 print('DOAJ GOLD Koautoren ' + str(len(OA_DoajGold_Koautoren)))
+print('Journals: ' + str(Journal_Doaj_Gold_Koautoren))
 print('GreenPublished Koautoren ' + str(len(OA_GreenPublished_Koautoren)))
+print('Journals: ' + str(Journal_Green_Published_Koautoren))
 print('Bronze Koautoren ' + str(len(OA_Bronze_Koautoren)))
+print('Journals: ' + str(Journal_Bronze_Koautoren))
 print('Other Koautoren ' + str(len(OA_Other_Koautoren)))
+print('Journals: ' + str(str(Journal_Other_Koautoren)))
 
 os.remove('./Zusammengeführte_BibTex_Files/collection.bib')
