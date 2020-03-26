@@ -21,6 +21,12 @@ Journal_Analyse_Koautoren = True
 #Ermöglicht eine Aufzählung welche Disziplinen vorkommen und wie oft
 Disziplinen_Analyse_Erstautoren = True
 Disziplinen_Analyse_Koautoren = True
+#Ermöglicht eine Aufzählung welche Publisher vorkommen und wie oft
+Publisher_Analyse_Erstautoren = True
+Publisher_Analyse_Koautoren = True
+#Ermöglicht eine Aufzählung der Jahre und deren Häufigkeit
+Jahr_Analyse_Erstautoren = True
+Jahr_Analyse_Koautoren = True
 
 #-----------------------REGEX-PATTERN
 
@@ -203,49 +209,117 @@ def Collect_Research_Areas(e):
     return x
 
 if Disziplinen_Analyse_Erstautoren is True:
-    Disziplin_Other_Gold_Erstautoren = Collect_Research_Areas(OA_Other_Erstautoren)
+    Disziplin_Other_Gold_Erstautoren = Collect_Research_Areas(OA_OtherGold_Erstautoren)
     Disziplin_Doaj_Gold_Erstautoren = Collect_Research_Areas(OA_DoajGold_Erstautoren)
     Disziplin_Green_Published_Erstautoren = Collect_Research_Areas(OA_GreenPublished_Erstautoren)
     Disziplin_Bronze_Erstautoren = Collect_Research_Areas(OA_Bronze_Erstautoren)
     Disziplin_Other_Erstautoren = Collect_Research_Areas(OA_Other_Erstautoren)
 
 if Disziplinen_Analyse_Koautoren is True:
-    Disziplin_Other_Gold_Koautoren = Collect_Research_Areas(OA_Other_Koautoren)
+    Disziplin_Other_Gold_Koautoren = Collect_Research_Areas(OA_OtherGold_Koautoren)
     Disziplin_Doaj_Gold_Koautoren = Collect_Research_Areas(OA_DoajGold_Koautoren)
     Disziplin_Green_Published_Koautoren = Collect_Research_Areas(OA_GreenPublished_Koautoren)
     Disziplin_Bronze_Koautoren = Collect_Research_Areas(OA_Bronze_Koautoren)
     Disziplin_Other_Koautoren = Collect_Research_Areas(OA_Other_Koautoren)
-#------Prints
 
+#---------------------FILTERN NACH PUBLISHER
+
+
+def Collect_Publisher(f):
+    PublisherTempList = []
+    for dict in f:
+        add=dict.get('publisher')
+        if add is not None:
+            PublisherTempList.append(add)
+            x=Listen_Ranking(PublisherTempList)
+    return x
+
+#---------------------FILTERN NACH JAHR
+
+
+def Collect_Years(g):
+    YearTempList = []
+    for dict in g:
+        add=dict.get('year')
+        if add is not None:
+            YearTempList.append(add)
+            x=Listen_Ranking(YearTempList)
+    return x
+
+print(Collect_Years(Koautoren))
+
+if Publisher_Analyse_Erstautoren is True:
+    Publisher_Other_Gold_Erstautoren = Collect_Publisher(OA_OtherGold_Erstautoren)
+    Publisher_Doaj_Gold_Erstautoren = Collect_Publisher(OA_DoajGold_Erstautoren)
+    Publisher_Green_Published_Erstautoren = Collect_Publisher(OA_GreenPublished_Erstautoren)
+    Publisher_Bronze_Erstautoren = Collect_Publisher(OA_Bronze_Erstautoren)
+    Publisher_Other_Erstautoren = Collect_Publisher(OA_Other_Erstautoren)
+
+if Publisher_Analyse_Koautoren is True:
+    Publisher_Other_Gold_Koautoren = Collect_Publisher(OA_OtherGold_Koautoren)
+    Publisher_Doaj_Gold_Koautoren = Collect_Publisher(OA_DoajGold_Koautoren)
+    Publisher_Green_Published_Koautoren = Collect_Publisher(OA_GreenPublished_Koautoren)
+    Publisher_Bronze_Koautoren = Collect_Publisher(OA_Bronze_Koautoren)
+    Publisher_Other_Koautoren = Collect_Publisher(OA_Other_Koautoren)
+
+
+#------Prints
+'''
 #pprint.pprint(OA_GreenPublished_Koautoren)
 print('OA-Status der Erstautoren: ')
-print('Other Gold Erstautoren ' + str(len(OA_OtherGold_Erstautoren)))
+print('OA Other Gold Erstautoren ' + str(len(OA_OtherGold_Erstautoren)))
 print('Journals: ' + str(Journal_Other_Gold_Erstautoren))
 print('Disziplinen: ' + str(Disziplin_Other_Gold_Erstautoren))
-print('DOAJ GOLD Erstautoren ' + str(len(OA_DoajGold_Erstautoren)))
+print('Publisher: ' + str(Publisher_Other_Gold_Erstautoren))
+
+print('OA DOAJ GOLD Erstautoren ' + str(len(OA_DoajGold_Erstautoren)))
 print('Journals: ' + str(Journal_Doaj_Gold_Erstautoren))
 print('Disziplinen: ' + str(Disziplin_Doaj_Gold_Erstautoren))
-print('GreenPublished Erstautoren ' + str(len(OA_GreenPublished_Erstautoren)))
+print('Publisher: ' + str(Publisher_Doaj_Gold_Erstautoren))
+
+print('OA GreenPublished Erstautoren ' + str(len(OA_GreenPublished_Erstautoren)))
 print('Journals: ' + str(Journal_Green_Published_Erstautoren))
 print('Disziplinen: ' + str(Disziplin_Green_Published_Erstautoren))
-print('Bronze Erstautoren ' + str(len(OA_Bronze_Erstautoren)))
+print('Publisher: ' + str(Publisher_Green_Published_Erstautoren))
+
+print('OA Bronze Erstautoren ' + str(len(OA_Bronze_Erstautoren)))
 print('Journals: ' + str(Journal_Bronze_Erstautoren))
 print('Disziplinen: ' + str(Disziplin_Bronze_Erstautoren))
-print('Other Erstautoren ' + str(len(OA_Other_Erstautoren)))
+print('Publisher: ' + str(Publisher_Bronze_Erstautoren))
+
+print('OA Other Erstautoren ' + str(len(OA_Other_Erstautoren)))
 print('Journals: ' + str(Journal_Other_Erstautoren))
-print('Disziplinen: ' + str(Disziplin_Other_Gold_Erstautoren) + '\n')
+print('Disziplinen: ' + str(Disziplin_Other_Erstautoren))
+print('Publisher: ' + str(Publisher_Other_Erstautoren) + '\n')
 
 print('Koautoren: ')
-print('OA-Status der Koautoren: ')
-print('Other Gold Koautoren ' + str(len(OA_OtherGold_Koautoren)))
-print('Journals: ' + str(Journal_Other_Gold_Koautoren))
-print('DOAJ GOLD Koautoren ' + str(len(OA_DoajGold_Koautoren)))
-print('Journals: ' + str(Journal_Doaj_Gold_Koautoren))
-print('GreenPublished Koautoren ' + str(len(OA_GreenPublished_Koautoren)))
-print('Journals: ' + str(Journal_Green_Published_Koautoren))
-print('Bronze Koautoren ' + str(len(OA_Bronze_Koautoren)))
-print('Journals: ' + str(Journal_Bronze_Koautoren))
-print('Other Koautoren ' + str(len(OA_Other_Koautoren)))
-print('Journals: ' + str(str(Journal_Other_Koautoren)))
 
+print('OA-Status der Koautoren: ')
+print('OA Other Gold Koautoren ' + str(len(OA_OtherGold_Koautoren)))
+print('Journals: ' + str(Journal_Other_Gold_Koautoren))
+print('Disziplinen: ' + str(Disziplin_Other_Gold_Koautoren))
+print('Publisher: ' + str(Publisher_Other_Gold_Koautoren))
+
+
+print('OA DOAJ GOLD Koautoren ' + str(len(OA_DoajGold_Koautoren)))
+print('Journals: ' + str(Journal_Doaj_Gold_Koautoren))
+print('Disziplinen: ' + str(Disziplin_Doaj_Gold_Koautoren))
+print('Publisher: ' + str(Publisher_Doaj_Gold_Koautoren))
+
+print('OA GreenPublished Koautoren ' + str(len(OA_GreenPublished_Koautoren)))
+print('Journals: ' + str(Journal_Green_Published_Koautoren))
+print('Disziplinen: ' + str(Disziplin_Green_Published_Koautoren))
+print('Publisher: ' + str(Publisher_Green_Published_Koautoren))
+
+
+print('OA Bronze Koautoren ' + str(len(OA_Bronze_Koautoren)))
+print('Journals: ' + str(Journal_Bronze_Koautoren))
+print('Disziplinen: ' + str(Disziplin_Bronze_Koautoren))
+print('Publisher: ' + str(Publisher_Bronze_Erstautoren))
+
+print('OA Other Koautoren ' + str(len(OA_Other_Koautoren)))
+print('Journals: ' + str(str(Journal_Other_Koautoren)))
+print('Disziplinen: ' + str(Disziplin_Other_Koautoren))
+print('Publisher: ' + str(Publisher_Other_Erstautoren))
+'''
 os.remove('./Zusammengeführte_BibTex_Files/collection.bib')
