@@ -4,6 +4,28 @@ import glob
 import os
 import re
 import time
+import csv
+
+#-----------------------NFO
+
+'''
+Damit alles funktioniert, bitte aus dem Repositorium die Ordner „Dateien“ und „Zusammengeführte_BibTex_Files“
+in dasselbe Verzeichnis legen wie die „main.py“ Datei.
+
+Im Ordner „Dateien“ liegt ein 500er Testset, es müssen also keine Daten händisch importiert werden.
+
+Im Bereich „PARAMETER“ unter „Institution_Erstautor/ Koautor“ können beliebige Namen der Institutionen eingetragen
+werden, nach diesen wird dann gesucht.
+Die Ergebnismenge der einzelnen Suchanfragen hängt natürlich von dem 500er Testset ab.
+
+Die Anderen Parameter sollten vorerst auf "True" bleiben, da diese ineinandergreifen und noch nicht optimiert wurden.
+
+
+'''
+
+
+
+
 #-----------------------PARAMETER
 
 Institution_Erstautor = 'radar'
@@ -27,7 +49,9 @@ Publisher_Analyse_Koautoren = True
 #Ermöglicht eine Aufzählung der Jahre und deren Häufigkeit
 Jahr_Analyse_Erstautoren = True
 Jahr_Analyse_Koautoren = True
-
+#Ermöglicht eine Aufzählung der Funding-acknowledgements
+Funding_Acknowledgement_Ertstautoren = True
+Funding_Acknowledgement_Koautoren = True
 #-----------------------REGEX-PATTERN
 
 
@@ -91,7 +115,7 @@ def Listen_Ranking(v):
 def Filtern_der_Erstautoren(a):
     Erstautoren_Collection = []
     for dict in a:
-        add=dict.get('address')
+        add = dict.get('address')
         if Erstautoren_regex.match(add):
             if dict not in Erstautoren_Collection:
                 Erstautoren_Collection.append(dict)
@@ -110,7 +134,7 @@ if Suche_nach_Erstautoren is True:
 def Filtern_der_Koautoren(b):
     Koautoren_Collection = []
     for dict in b:
-        add=dict.get('affiliation')
+        add = dict.get('affiliation')
         if Koautoren_regex.match(add):
             if dict not in Koautoren_Collection:
                 Koautoren_Collection.append(dict)
@@ -137,7 +161,7 @@ def Filter_OA_Status(c):
     OA_Other =[]
 
     for dict in c:
-        add=dict.get('oa')
+        add = dict.get('oa')
         if add is not None:
             if oa_other_GoldRegex.match(add):
                 if dict not in OA_Other_Gold:
@@ -157,17 +181,31 @@ def Filter_OA_Status(c):
             else:
                 if dict not in OA_Other:
                     OA_Other.append(dict)
-    return OA_Other_Gold, OA_Doaj_Gold, OA_Green_Published, OA_Bronze, OA_Other
+    return OA_Other_Gold,\
+           OA_Doaj_Gold,\
+           OA_Green_Published,\
+           OA_Bronze,\
+           OA_Other
 
 
 #-------AKTIVIEREN DER OA-FILTER-FUNKTION
 
 if OA_Status_Erstautoren is True:
-    OA_OtherGold_Erstautoren, OA_DoajGold_Erstautoren, OA_GreenPublished_Erstautoren, OA_Bronze_Erstautoren, OA_Other_Erstautoren = Filter_OA_Status(Erstautoren)
+    OA_OtherGold_Erstautoren,\
+    OA_DoajGold_Erstautoren,\
+    OA_GreenPublished_Erstautoren,\
+    OA_Bronze_Erstautoren,\
+    OA_Other_Erstautoren\
+        = Filter_OA_Status(Erstautoren)
 
 
 if OA_Status_Koautoren is True:
-    OA_OtherGold_Koautoren, OA_DoajGold_Koautoren, OA_GreenPublished_Koautoren, OA_Bronze_Koautoren, OA_Other_Koautoren = Filter_OA_Status(Koautoren)
+    OA_OtherGold_Koautoren,\
+    OA_DoajGold_Koautoren,\
+    OA_GreenPublished_Koautoren,\
+    OA_Bronze_Koautoren,\
+    OA_Other_Koautoren\
+        = Filter_OA_Status(Koautoren)
 
 #----------------------FILTER-NACH-JOURNAL
 
@@ -175,25 +213,27 @@ if OA_Status_Koautoren is True:
 def Collect_Journal(d):
     TempList = []
     for dict in d:
-        add=dict.get('journal')
+        add = dict.get('journal')
         if add is not None:
             TempList.append(add)
-            x=Listen_Ranking(TempList)
+            x = Listen_Ranking(TempList)
     return x
 
 if Journal_Analyse_Erstautoren is True:
-    Journal_Other_Gold_Erstautoren = Collect_Journal(OA_OtherGold_Erstautoren)
-    Journal_Doaj_Gold_Erstautoren = Collect_Journal(OA_DoajGold_Erstautoren)
-    Journal_Green_Published_Erstautoren = Collect_Journal(OA_GreenPublished_Erstautoren)
-    Journal_Bronze_Erstautoren = Collect_Journal(OA_Bronze_Erstautoren)
-    Journal_Other_Erstautoren = Collect_Journal(OA_Other_Erstautoren)
+    Journal_Erstautoren = [Collect_Journal(OA_OtherGold_Erstautoren),
+                           Collect_Journal(OA_DoajGold_Erstautoren),
+                           Collect_Journal(OA_GreenPublished_Erstautoren),
+                           Collect_Journal(OA_Bronze_Erstautoren),
+                           Collect_Journal(OA_Other_Erstautoren)]
+
 
 if Journal_Analyse_Koautoren is True:
-    Journal_Other_Gold_Koautoren = Collect_Journal(OA_OtherGold_Koautoren)
-    Journal_Doaj_Gold_Koautoren = Collect_Journal(OA_DoajGold_Koautoren)
-    Journal_Green_Published_Koautoren = Collect_Journal(OA_GreenPublished_Koautoren)
-    Journal_Bronze_Koautoren = Collect_Journal(OA_Bronze_Koautoren)
-    Journal_Other_Koautoren = Collect_Journal(OA_Other_Koautoren)
+    Journal_Koautoren = [Collect_Journal(OA_OtherGold_Koautoren),
+                         Collect_Journal(OA_DoajGold_Koautoren),
+                         Collect_Journal(OA_GreenPublished_Koautoren),
+                         Collect_Journal(OA_Bronze_Koautoren),
+                         Collect_Journal(OA_Other_Koautoren)]
+
 
 
 #---------------------FILTERN NACH DISZIPLIN
@@ -209,18 +249,20 @@ def Collect_Research_Areas(e):
     return x
 
 if Disziplinen_Analyse_Erstautoren is True:
-    Disziplin_Other_Gold_Erstautoren = Collect_Research_Areas(OA_OtherGold_Erstautoren)
-    Disziplin_Doaj_Gold_Erstautoren = Collect_Research_Areas(OA_DoajGold_Erstautoren)
-    Disziplin_Green_Published_Erstautoren = Collect_Research_Areas(OA_GreenPublished_Erstautoren)
-    Disziplin_Bronze_Erstautoren = Collect_Research_Areas(OA_Bronze_Erstautoren)
-    Disziplin_Other_Erstautoren = Collect_Research_Areas(OA_Other_Erstautoren)
+    Disziplin_Erstautoren = [Collect_Research_Areas(OA_OtherGold_Erstautoren),
+                             Collect_Research_Areas(OA_DoajGold_Erstautoren),
+                             Collect_Research_Areas(OA_GreenPublished_Erstautoren),
+                             Collect_Research_Areas(OA_Bronze_Erstautoren),
+                             Collect_Research_Areas(OA_Other_Erstautoren)]
+
 
 if Disziplinen_Analyse_Koautoren is True:
-    Disziplin_Other_Gold_Koautoren = Collect_Research_Areas(OA_OtherGold_Koautoren)
-    Disziplin_Doaj_Gold_Koautoren = Collect_Research_Areas(OA_DoajGold_Koautoren)
-    Disziplin_Green_Published_Koautoren = Collect_Research_Areas(OA_GreenPublished_Koautoren)
-    Disziplin_Bronze_Koautoren = Collect_Research_Areas(OA_Bronze_Koautoren)
-    Disziplin_Other_Koautoren = Collect_Research_Areas(OA_Other_Koautoren)
+    Disziplin_Koautoren = [Collect_Research_Areas(OA_OtherGold_Koautoren),
+                           Collect_Research_Areas(OA_DoajGold_Koautoren),
+                           Collect_Research_Areas(OA_GreenPublished_Koautoren),
+                           Collect_Research_Areas(OA_Bronze_Koautoren),
+                           Collect_Research_Areas(OA_Other_Koautoren)]
+
 
 #---------------------FILTERN NACH PUBLISHER
 
@@ -234,92 +276,135 @@ def Collect_Publisher(f):
             x=Listen_Ranking(PublisherTempList)
     return x
 
+if Publisher_Analyse_Erstautoren is True:
+    Publisher_Erstautoren = [Collect_Publisher(OA_OtherGold_Erstautoren),
+                             Collect_Publisher(OA_DoajGold_Erstautoren),
+                             Collect_Publisher(OA_GreenPublished_Erstautoren),
+                             Collect_Publisher(OA_Bronze_Erstautoren),
+                             Collect_Publisher(OA_Other_Erstautoren)]
+
+
+if Publisher_Analyse_Koautoren is True:
+    Publisher_Koautoren = [Collect_Publisher(OA_OtherGold_Koautoren),
+                           Collect_Publisher(OA_DoajGold_Koautoren),
+                           Collect_Publisher(OA_GreenPublished_Koautoren),
+                           Collect_Publisher(OA_Bronze_Koautoren),
+                           Collect_Publisher(OA_Other_Koautoren)]
+
+
 #---------------------FILTERN NACH JAHR
 
 
 def Collect_Years(g):
-    YearTempList = []
-    for dict in g:
-        add=dict.get('year')
-        if add is not None:
-            YearTempList.append(add)
-            x=Listen_Ranking(YearTempList)
-    return x
+    Year = []
+    Month = []
+    for dicti in g:
+        year = dicti.get('year')
+        month = dicti.get('month')
+        if year is not None and month is not None:
+            Year.append(year)
+            Month.append(month)
+            a = Listen_Ranking(Year)
+    return a
 
-print(Collect_Years(Koautoren))
 
-if Publisher_Analyse_Erstautoren is True:
-    Publisher_Other_Gold_Erstautoren = Collect_Publisher(OA_OtherGold_Erstautoren)
-    Publisher_Doaj_Gold_Erstautoren = Collect_Publisher(OA_DoajGold_Erstautoren)
-    Publisher_Green_Published_Erstautoren = Collect_Publisher(OA_GreenPublished_Erstautoren)
-    Publisher_Bronze_Erstautoren = Collect_Publisher(OA_Bronze_Erstautoren)
-    Publisher_Other_Erstautoren = Collect_Publisher(OA_Other_Erstautoren)
+#---------------------FILTERN NACH FOUNDING ACKNOLEDGEMENT
 
-if Publisher_Analyse_Koautoren is True:
-    Publisher_Other_Gold_Koautoren = Collect_Publisher(OA_OtherGold_Koautoren)
-    Publisher_Doaj_Gold_Koautoren = Collect_Publisher(OA_DoajGold_Koautoren)
-    Publisher_Green_Published_Koautoren = Collect_Publisher(OA_GreenPublished_Koautoren)
-    Publisher_Bronze_Koautoren = Collect_Publisher(OA_Bronze_Koautoren)
-    Publisher_Other_Koautoren = Collect_Publisher(OA_Other_Koautoren)
+
+def Collect_FA(f):
+    FA = []
+    for dicti in f:
+        fa = dicti.get('funding-acknowledgement')
+        if fa is not None:
+            FA.append(fa)
+            a = Listen_Ranking(FA)
+    return a
+
+if Funding_Acknowledgement_Ertstautoren is True:
+    Funding_Erstautoren = [Collect_FA(OA_OtherGold_Erstautoren),
+                            Collect_FA(OA_DoajGold_Erstautoren),
+                            Collect_FA(OA_GreenPublished_Erstautoren),
+                            Collect_FA(OA_Bronze_Erstautoren),
+                            Collect_FA(OA_OtherGold_Erstautoren)]
+
+if Funding_Acknowledgement_Koautoren is True:
+    Funding_Koautoren = [Collect_FA(OA_OtherGold_Koautoren),
+                          Collect_FA(OA_DoajGold_Koautoren),
+                          Collect_FA(OA_GreenPublished_Koautoren),
+                          Collect_FA(OA_Bronze_Koautoren),
+                          Collect_FA(OA_OtherGold_Koautoren)]
+
+
+#------------------WRITE-CSV
+
 
 
 #------Prints
-'''
-#pprint.pprint(OA_GreenPublished_Koautoren)
+
+
 print('OA-Status der Erstautoren: ')
 print('OA Other Gold Erstautoren ' + str(len(OA_OtherGold_Erstautoren)))
-print('Journals: ' + str(Journal_Other_Gold_Erstautoren))
-print('Disziplinen: ' + str(Disziplin_Other_Gold_Erstautoren))
-print('Publisher: ' + str(Publisher_Other_Gold_Erstautoren))
+print('Journals: ' + str(Journal_Erstautoren[0]))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[0]))
+print('Publisher: ' + str(Publisher_Erstautoren[0]))
+print('Funding: ' + str(Funding_Erstautoren[0]))
 
 print('OA DOAJ GOLD Erstautoren ' + str(len(OA_DoajGold_Erstautoren)))
-print('Journals: ' + str(Journal_Doaj_Gold_Erstautoren))
-print('Disziplinen: ' + str(Disziplin_Doaj_Gold_Erstautoren))
-print('Publisher: ' + str(Publisher_Doaj_Gold_Erstautoren))
+print('Journals: ' + str(Journal_Erstautoren[1]))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[1]))
+print('Publisher: ' + str(Publisher_Erstautoren[1]))
+print('Funding: ' + str(Funding_Erstautoren[1]))
 
 print('OA GreenPublished Erstautoren ' + str(len(OA_GreenPublished_Erstautoren)))
-print('Journals: ' + str(Journal_Green_Published_Erstautoren))
-print('Disziplinen: ' + str(Disziplin_Green_Published_Erstautoren))
-print('Publisher: ' + str(Publisher_Green_Published_Erstautoren))
+print('Journals: ' + str(Journal_Erstautoren[2]))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[2]))
+print('Publisher: ' + str(Publisher_Erstautoren[2]))
+print('Funding: ' + str(Funding_Erstautoren[2]))
 
 print('OA Bronze Erstautoren ' + str(len(OA_Bronze_Erstautoren)))
-print('Journals: ' + str(Journal_Bronze_Erstautoren))
-print('Disziplinen: ' + str(Disziplin_Bronze_Erstautoren))
-print('Publisher: ' + str(Publisher_Bronze_Erstautoren))
+print('Journals: ' + str(Journal_Erstautoren[3]))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[3]))
+print('Publisher: ' + str(Publisher_Erstautoren[3]))
+print('Funding: ' + str(Funding_Erstautoren[3]))
 
 print('OA Other Erstautoren ' + str(len(OA_Other_Erstautoren)))
-print('Journals: ' + str(Journal_Other_Erstautoren))
-print('Disziplinen: ' + str(Disziplin_Other_Erstautoren))
-print('Publisher: ' + str(Publisher_Other_Erstautoren) + '\n')
+print('Journals: ' + str(Journal_Erstautoren[4]))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[4]))
+print('Publisher: ' + str(Publisher_Erstautoren[4]))
+print('Funding: ' + str(Funding_Erstautoren[4]) + '\n')
 
 print('Koautoren: ')
 
 print('OA-Status der Koautoren: ')
 print('OA Other Gold Koautoren ' + str(len(OA_OtherGold_Koautoren)))
-print('Journals: ' + str(Journal_Other_Gold_Koautoren))
-print('Disziplinen: ' + str(Disziplin_Other_Gold_Koautoren))
-print('Publisher: ' + str(Publisher_Other_Gold_Koautoren))
+print('Journals: ' + str(Journal_Erstautoren[0]))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[0]))
+print('Publisher: ' + str(Publisher_Erstautoren[0]))
+print('Funding: ' + str(Funding_Koautoren[0]))
 
 
 print('OA DOAJ GOLD Koautoren ' + str(len(OA_DoajGold_Koautoren)))
-print('Journals: ' + str(Journal_Doaj_Gold_Koautoren))
-print('Disziplinen: ' + str(Disziplin_Doaj_Gold_Koautoren))
-print('Publisher: ' + str(Publisher_Doaj_Gold_Koautoren))
+print('Journals: ' + str(Journal_Erstautoren[1]))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[1]))
+print('Publisher: ' + str(Publisher_Erstautoren[1]))
+print('Funding: ' + str(Funding_Koautoren[1]))
 
 print('OA GreenPublished Koautoren ' + str(len(OA_GreenPublished_Koautoren)))
-print('Journals: ' + str(Journal_Green_Published_Koautoren))
-print('Disziplinen: ' + str(Disziplin_Green_Published_Koautoren))
-print('Publisher: ' + str(Publisher_Green_Published_Koautoren))
-
+print('Journals: ' + str(Journal_Erstautoren[2]))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[2]))
+print('Publisher: ' + str(Publisher_Erstautoren[2]))
+print('Founding: ' + str(Funding_Koautoren[2]))
 
 print('OA Bronze Koautoren ' + str(len(OA_Bronze_Koautoren)))
-print('Journals: ' + str(Journal_Bronze_Koautoren))
-print('Disziplinen: ' + str(Disziplin_Bronze_Koautoren))
-print('Publisher: ' + str(Publisher_Bronze_Erstautoren))
+print('Journals: ' + str(Journal_Erstautoren[3]))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[3]))
+print('Publisher: ' + str(Publisher_Erstautoren[3]))
+print('Funding: ' + str(Funding_Koautoren[3]))
 
 print('OA Other Koautoren ' + str(len(OA_Other_Koautoren)))
-print('Journals: ' + str(str(Journal_Other_Koautoren)))
-print('Disziplinen: ' + str(Disziplin_Other_Koautoren))
-print('Publisher: ' + str(Publisher_Other_Erstautoren))
-'''
+print('Journals: ' + str(str(Journal_Erstautoren[4])))
+print('Disziplinen: ' + str(Disziplin_Erstautoren[4]))
+print('Publisher: ' + str(Publisher_Erstautoren[4]))
+print('Funding: ' + str(Funding_Koautoren[4]))
+
 os.remove('./Zusammengeführte_BibTex_Files/collection.bib')
