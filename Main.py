@@ -360,7 +360,7 @@ if CSV_Ergebnisliste is True:
         writer.writerow([len(OA_Other_Erstautoren), len(Journal_Erstautoren[4]), len(Disziplin_Erstautoren[4]), len(Publisher_Erstautoren[4]), len(Funding_Erstautoren[4])])
 #------Prints
 
-'''
+
 print('OA-Status der Erstautoren: ')
 print('OA Other Gold Erstautoren ' + str(len(OA_OtherGold_Erstautoren)))
 print('Journals: ' + str(Journal_Erstautoren[0]))
@@ -425,5 +425,5 @@ print('Journals: ' + str(str(Journal_Erstautoren[4])))
 print('Disziplinen: ' + str(Disziplin_Erstautoren[4]))
 print('Publisher: ' + str(Publisher_Erstautoren[4]))
 print('Funding: ' + str(Funding_Koautoren[4]))
-'''
+
 os.remove('./Zusammengeführte_BibTex_Files/collection.bib')
