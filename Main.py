@@ -18,8 +18,9 @@ Im Bereich „PARAMETER“ unter „Institution_Erstautor/ Koautor“ können be
 werden, nach diesen wird dann gesucht.
 Die Ergebnismenge der einzelnen Suchanfragen hängt natürlich von dem 500er Testset ab.
 
+Mit dem Parameter "CSV_Ergebnisliste" kann ein CSV-File innerhalb des Arbeitsverzeichnis mit den Ergebniswerten erstellt werden. (Wenn auf True)
 Die Anderen Parameter sollten vorerst auf "True" bleiben, da diese ineinandergreifen und noch nicht optimiert wurden.
-
+3
 
 '''
 
@@ -27,6 +28,8 @@ Die Anderen Parameter sollten vorerst auf "True" bleiben, da diese ineinandergre
 
 
 #-----------------------PARAMETER
+
+CSV_Ergebnisliste = True
 
 Institution_Erstautor = 'radar'
 Institution_Koautor = 'bonn'
@@ -304,8 +307,8 @@ def Collect_Years(g):
         if year is not None and month is not None:
             Year.append(year)
             Month.append(month)
-            a = Listen_Ranking(Year)
-    return a
+    return t
+
 
 
 #---------------------FILTERN NACH FOUNDING ACKNOLEDGEMENT
@@ -336,12 +339,28 @@ if Funding_Acknowledgement_Koautoren is True:
 
 
 #------------------WRITE-CSV
-
-
-
+if CSV_Ergebnisliste is True:
+    with open ('test.csv', 'w', newline='') as outcsv:
+        writer = csv.writer(outcsv)
+        writer.writerow(['Erstautoren'])
+        writer.writerow(['OA-Status Other Gold'])
+        writer.writerow(['Veröffentlichungen', 'Journals', 'Disziplinen', 'Publisher', 'Funding-Acknowledgements'])
+        writer.writerow([len(OA_Other_Erstautoren), len(Journal_Erstautoren[0]), len(Disziplin_Erstautoren[0]), len(Publisher_Erstautoren[0]), len(Funding_Erstautoren[0])])
+        writer.writerow(['OA-Status DOAJ-Gold'])
+        writer.writerow(['Veröffentlichungen', 'Journals', 'Disziplinen', 'Publisher', 'Funding-Acknowledgements'])
+        writer.writerow([len(OA_DoajGold_Erstautoren), len(Journal_Erstautoren[1]), len(Disziplin_Erstautoren[1]), len(Publisher_Erstautoren[1]), len(Funding_Erstautoren[1])])
+        writer.writerow(['OA-Status Green-Published'])
+        writer.writerow(['Veröffentlichungen', 'Journals', 'Disziplinen', 'Publisher', 'Funding-Acknowledgements'])
+        writer.writerow([len(OA_GreenPublished_Erstautoren), len(Journal_Erstautoren[2]), len(Disziplin_Erstautoren[2]), len(Publisher_Erstautoren[2]), len(Funding_Erstautoren[2])])
+        writer.writerow(['OA-Status Bronze'])
+        writer.writerow(['Veröffentlichungen', 'Journals', 'Disziplinen', 'Publisher', 'Funding-Acknowledgements'])
+        writer.writerow([len(OA_Bronze_Erstautoren), len(Journal_Erstautoren[3]), len(Disziplin_Erstautoren[3]), len(Publisher_Erstautoren[3]), len(Funding_Erstautoren[3])])
+        writer.writerow(['OA-Status Other'])
+        writer.writerow(['Veröffentlichungen', 'Journals', 'Disziplinen', 'Publisher', 'Funding-Acknowledgements'])
+        writer.writerow([len(OA_Other_Erstautoren), len(Journal_Erstautoren[4]), len(Disziplin_Erstautoren[4]), len(Publisher_Erstautoren[4]), len(Funding_Erstautoren[4])])
 #------Prints
 
-
+'''
 print('OA-Status der Erstautoren: ')
 print('OA Other Gold Erstautoren ' + str(len(OA_OtherGold_Erstautoren)))
 print('Journals: ' + str(Journal_Erstautoren[0]))
@@ -406,5 +425,5 @@ print('Journals: ' + str(str(Journal_Erstautoren[4])))
 print('Disziplinen: ' + str(Disziplin_Erstautoren[4]))
 print('Publisher: ' + str(Publisher_Erstautoren[4]))
 print('Funding: ' + str(Funding_Koautoren[4]))
-
+'''
 os.remove('./Zusammengeführte_BibTex_Files/collection.bib')
