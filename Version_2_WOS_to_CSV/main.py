@@ -21,12 +21,13 @@ Koautoren_regex = re.compile(r'.*\s\(Reprint\sAuthor\).*%s.*\.' % Institution_Ko
 #-----------------------------------------------------------------------------------------------------MERGEN-DER-DATEIEN
 path = ('./Dateien')
 if os.path.exists(path) == True:
-    print("BibTex Files aus ", path, "werden zusammengeführt.")
+    print("BibTex Files aus ", path, "werden eingelesen.")
 else:
     print(path, "existiert nicht.")
 
 
 for filename in glob.glob(os.path.join(path, '*.bib')):
+    print('Dateien werden zusammengeführt')
     with open(filename, 'r') as f:
         with open('./Zusammengeführte_BibTex_Files/collection.bib', 'a') as outfile:
             for line in f:
@@ -40,6 +41,7 @@ bib_database = bibtexparser.loads(bibtex_str)
 
 #--------------------------------------------------------------------------------------------ERSTAUTOREN-FILTER-FUNKTION
 def Filtern_der_Autoren(a):
+    print('Autoren werden gefiltert.')
     Autoren_Collection = []
     Autoren_Status = []
     for aut in a:
@@ -164,16 +166,16 @@ def Collect_Namen(g):
 #-------------------------------------------------------------------------------------------------------------CSV-WRITER
 
 df = pd.DataFrame((list(zip(*[
-                              Collect_Titel(Autoren),
-                              Collect_Namen(Autoren),
-                              Autoren_Status,
-                              Filter_OA_Status(Autoren),
-                              Jahr,
-                              Monat,
-                              Collect_Journal(Autoren),
-                              Collect_Research_Areas(Autoren),
-                              Collect_Publisher(Autoren),
-                              Collect_FA(Autoren)]))))
+    Collect_Titel(Autoren),
+    Collect_Namen(Autoren),
+    Autoren_Status,
+    Filter_OA_Status(Autoren),
+    Jahr,
+    Monat,
+    Collect_Journal(Autoren),
+    Collect_Research_Areas(Autoren),
+    Collect_Publisher(Autoren),
+    Collect_FA(Autoren)]))))
 
 df.columns = ['Titel',
               'Name',
