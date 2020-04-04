@@ -2,8 +2,10 @@ import bibtexparser
 import glob
 import os
 import re
+import csv
+import pprint
 import pandas as pd
-
+from itertools import zip_longest
 #--------------------------------------------------------------------------------------------------------------PARAMETER
 
 
@@ -165,33 +167,41 @@ def Collect_Namen(g):
     return Namen
 #-------------------------------------------------------------------------------------------------------------CSV-WRITER
 
-df = pd.DataFrame((list(zip(*[
-    Collect_Titel(Autoren),
-    Collect_Namen(Autoren),
-    Autoren_Status,
-    Filter_OA_Status(Autoren),
-    Jahr,
-    Monat,
-    Collect_Journal(Autoren),
-    Collect_Research_Areas(Autoren),
-    Collect_Publisher(Autoren),
-    Collect_FA(Autoren)]))))
-
-df.columns = ['Titel',
-              'Name',
-              'Autor-Status',
-              'OA-Status',
-              'Jahr',
-              'Monat',
-              'Journal',
-              'Disziplin',
-              'Publisher',
-              'Funding Acknowledgement']
-
-df.to_csv('file.csv', index=False, header=True)
+rows = zip(Collect_Titel(Autoren), Autoren_Status)
 
 
+attribute = [Collect_Titel(Autoren),
+             Autoren_Status,
+             Filter_OA_Status(Autoren),
+             Jahr,
+             Monat,
+             Collect_Journal(Autoren),
+             Collect_Research_Areas(Autoren),
+             Collect_Publisher(Autoren),
+             Collect_FA(Autoren),
+             Collect_Namen(Autoren)]
 
+export_data = zip_longest(*attribute, fillvalue='')
+
+with open('numbers.csv', 'w', encoding="ISO-8859-1", newline='') as out:
+      wr = csv.writer(out)
+      wr.writerow(['Titel',
+                   'Autoren_Status',
+                   'OA_Status',
+                   'Jahr',
+                   'Monat',
+                   'Journal',
+                   'Disziplin',
+                   'Publisher',
+                   'Funding_Acknowledgement',
+                   'Name',])
+      wr.writerows(export_data)
+out.close()
+
+
+
+
+print(len(Collect_Titel(Autoren)))
 
 
 os.remove('./Zusammengeführte_BibTex_Files/collection.bib')
