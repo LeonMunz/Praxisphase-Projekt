@@ -4,7 +4,6 @@ import os
 import re
 import csv
 import pprint
-import pandas as pd
 from itertools import zip_longest
 #--------------------------------------------------------------------------------------------------------------PARAMETER
 
@@ -71,9 +70,10 @@ def Listen_Ranking(v):
         counter.append(x)
         dictionary = dict(zip(v, counter))
     return(dictionary)
-print(Listen_Ranking(Autoren_Status))
+print('Gefundene Eintraege: ' + str(Listen_Ranking(Autoren_Status)))
 #--------------------------------------------------------------------------------------------------------------OA-FILTER
 def Filter_OA_Status(c):
+    print('OA-Status wird gefiltert')
     oastatus = []
     for oa in c:
         add = oa.get('oa')
@@ -84,6 +84,7 @@ def Filter_OA_Status(c):
 #-----------------------------------------------------------------------------------------------------------TITEL FILTER
 
 def Collect_Titel(h):
+    print('Titel werden gefiltert')
     Titel = []
     for tit in h:
         add = tit.get('title')
@@ -96,6 +97,7 @@ def Collect_Titel(h):
 #--------------------------------------------------------------------------------------------------------ZEITRAUM FILTER
 
 def Collect_Date(g):
+    print('Datum wird gefiltert')
     Year = []
     Month = []
     for tim in g:
@@ -116,6 +118,7 @@ Jahr, Monat = Collect_Date(Autoren)
 #---------------------------------------------------------------------------------------------------------JOURNAL-FILTER
 
 def Collect_Journal(d):
+    print('Journal wird gefiltert')
     TempList = []
     for jour in d:
         add = jour.get('journal')
@@ -127,6 +130,7 @@ def Collect_Journal(d):
 #---------------------------------------------------------------------------------------------------RESEARCH-AREA-FILTER
 
 def Collect_Research_Areas(e):
+    print('Research_Area wird gefiltert')
     re_area = []
     for ra in e:
         add=ra.get('research-areas')
@@ -138,6 +142,7 @@ def Collect_Research_Areas(e):
 #-------------------------------------------------------------------------------------------------------PUBLISHER-FILTER
 
 def Collect_Publisher(f):
+    print('Publisher wird gefiltert')
     PublisherTempList = []
     for pub in f:
         add=pub.get('publisher')
@@ -149,25 +154,32 @@ def Collect_Publisher(f):
 #------------------------------------------------------------------------------------------------FUNDING-ACKNOWLEDGEMENT
 
 def Collect_FA(f):
+    print('FA wird gefiltert')
     FA = []
     for dicti in f:
         add = dicti.get('funding-acknowledgement')
         if add is not None:
-            q = add.replace('{', '')
-            z = q.replace('}', '')
-            FA.append(z)
+            a = add.replace('{', '')
+            b = a.replace('}', '')
+            c = b.replace('\n', '')
+            d = c.replace('\\', '')
+            FA.append(d)
     return FA
+pprint.pprint(Collect_FA(Autoren))
 #-----------------------------------------------------------------------------------------------------------AUTORENNAMEN
 
 def Collect_Namen(g):
+    print('Namen werden gefiltert')
     Namen = []
     for nam in g:
         add = nam.get('author')
-        Namen.append(add)
+        a = add.replace('{', '')
+        b = a.replace('}', '')
+        c = b.replace('and', '')
+        d = c.replace('\n', '')
+        Namen.append(d)
     return Namen
 #-------------------------------------------------------------------------------------------------------------CSV-WRITER
-
-rows = zip(Collect_Titel(Autoren), Autoren_Status)
 
 
 attribute = [Collect_Titel(Autoren),
@@ -194,7 +206,7 @@ with open('numbers.csv', 'w', encoding="ISO-8859-1", newline='') as out:
                    'Disziplin',
                    'Publisher',
                    'Funding_Acknowledgement',
-                   'Name',])
+                   'Name'])
       wr.writerows(export_data)
 out.close()
 
