@@ -15,10 +15,8 @@ import matplotlib.pyplot as plt
 
 
 def startwindow():
-
     def close_window():
         window.destroy()
-        os.remove('./Zusammengeführte_BibTex_Files/collection.bib')
     #Functionen der GUI
     def mainWindowGrey():
         # Funktionen des Scripts:
@@ -40,6 +38,13 @@ def startwindow():
                             outfile.write(line)
             print('collection_File_erstelllt')
 
+
+        def selectDir_result():
+            global sdir_res
+            sdir_res = filedialog.askdirectory()
+            dir_lbl_res.configure(text=sdir_res, fg='green2')
+            return sdir_res
+
         # Kontroll Funktionen
         def kontrol_dir():
             dir_lbl.configure(text='Bitte wählen Sie zu erst ein Verzeichnis.', fg='red')
@@ -47,10 +52,9 @@ def startwindow():
 
 
 
-
         #Display_Frames
 
-        center_Frame0 = Frame(window, width=900, height=550, bg='grey16')
+        center_Frame0 = Frame(window, width=700, height=550, bg='grey19')
 
         center_space_Frame_top = Frame(window, width=900, height=80, highlightbackground="grey19",
                                        highlightthickness=1, bg='grey16')
@@ -91,19 +95,8 @@ def startwindow():
         weiterbtn.grid(column=0, row=0, padx=2, pady=5, sticky='nwse')
 
         #CONTENT
-        #Images
-        #Images
-        #top_Frame_img_ulb = Frame(window, width=100, height=80, bg='white')
-        #top_Frame_img_ulb.grid(row=0, column=0, sticky= 'ne')
+        #img
 
-        #top_Frame_img_th = Frame(window, width=100, height=80, bg='blue')
-        #top_Frame_img_th.grid(row=0, column=, sticky= 'ne')
-        '''
-        canvas = Canvas(top_Frame_img, width=100, height=100)
-        canvas.grid(row=1, column=1)
-        mein_Bild = PhotoImage(file='test.gif')
-        canvas.create_image(0, 0, image=mein_Bild)
-        '''
         #--center
         wel_lbl = Label(center_space_Frame_center, fg='white smoke', bg='grey16', justify=LEFT, text=
         'Hier steht ein Blindtext in voller Länge                                          \n'
@@ -111,25 +104,41 @@ def startwindow():
         'Dieser Text wird noch erweitert und soll einige Erläuterungen zum Programm enthalten\n'
         'Dieser Text wird noch erweitert und soll einige Erläuterungen zum Programm enthalten\n'
         )
+
         instruction_lbl = Label(center_space_Frame_center, fg='white smoke', bg='grey16', justify=LEFT, text=
         ' \n'
         'Bitte wählen Sie das Verzeichnis in dem sich die einzelnen BibTex-Files befinden: \n'
         ' ')
 
+        result_dir_lbl =Label(center_space_Frame_center, fg='white smoke', bg='grey16', justify=LEFT, text=
+        '\n'
+        '\n'
+        'Bitte wählen Sie das Verzeichnis in dem die Ergebnisfiles abgelegt werden sollen:'
+        '\n'
+        '*Falls keine Auswahl getroffen wird, werden die Files im Programmordner abgelegt'
+        '\n')
+
+
         dir_lbl = Label(center_space_Frame_center, text=' ', fg='green2', bg='grey16')
+        dir_lbl_res = Label(center_space_Frame_center, text=' ', fg='green2', bg='grey16')
+
         #--center BTNS
         dir_btn = Button(center_space_Frame_center, text='Verzeichnis wählen', command=selectDir)
+        dir_btn_result = Button(center_space_Frame_center, text='Verzeichnis wählen', command=selectDir_result)
 
         #Positioning Content
         #--top
 
         #--center
         wel_lbl.grid(row=0, column=0, sticky='n')
-        instruction_lbl.grid(row=1, column=0, sticky='w')
 
+        instruction_lbl.grid(row=1, column=0, sticky='w')
+        result_dir_lbl.grid(row=3, column=0, sticky='w')
         dir_lbl.grid(row=2, column=1, sticky='w')
+        dir_lbl_res.grid(row=4, column=1, sticky='w')
 
         dir_btn.grid(row=2, column=0, sticky='w')
+        dir_btn_result.grid(row=4, column=0, sticky='w')
 
 
 
@@ -303,22 +312,41 @@ def startwindow():
                 autor_status_count.append(i)
 
             export_data = zip_longest(*attribute_result, fillvalue='')
-            with open('resultlolololol.csv', 'w', encoding="ISO-8859-1", newline='') as out:
-                wr = csv.writer(out)
-                wr.writerow(['Titel',
-                             'Autoren_Status',
-                             'OA_Status',
-                             'Jahr',
-                             'Monat',
-                             'Journal',
-                             'Disziplin',
-                             'Publisher',
-                             'Funding_Acknowledgement',
-                             'Name'])
-                wr.writerows(export_data)
-            out.close()
+
+            try:
+                sdir_comb = sdir_res + '/resultfromsdirres.csv'
+                with open(sdir_comb, 'w', encoding="ISO-8859-1", newline='') as out:
+                    wr = csv.writer(out)
+                    wr.writerow(['Titel',
+                                 'Autoren_Status',
+                                 'OA_Status',
+                                 'Jahr',
+                                 'Monat',
+                                 'Journal',
+                                 'Disziplin',
+                                 'Publisher',
+                                 'Funding_Acknowledgement',
+                                 'Name'])
+                    wr.writerows(export_data)
+                out.close()
+            except:
+                with open('resultlolololol.csv', 'w', encoding="ISO-8859-1", newline='') as out:
+                    wr = csv.writer(out)
+                    wr.writerow(['Titel',
+                                 'Autoren_Status',
+                                 'OA_Status',
+                                 'Jahr',
+                                 'Monat',
+                                 'Journal',
+                                 'Disziplin',
+                                 'Publisher',
+                                 'Funding_Acknowledgement',
+                                 'Name'])
+                    wr.writerows(export_data)
+                out.close()
             os.remove('./Zusammengeführte_BibTex_Files/collection.bib')
-            print('File erstellt')
+            print('Collection-File gelöscht')
+            print('Result-CSV Erstellt')
             thirdwindow()
             return Titel, Autoren_Status
 
@@ -409,6 +437,33 @@ def startwindow():
 
 
     def thirdwindow():
+        #Funktionen zur Ausgabe innerhalb der GUI (im dritten Fenster)
+        def Listen_Ranking(v):
+            z = 0
+            counter = []
+            for x in v:
+                x = v.count(v[z])
+                z += 1
+                counter.append(x)
+                dictionary = dict(zip(v, counter))
+            return (dictionary)
+
+        max_oa_status = max(Listen_Ranking(oastatus), key=Listen_Ranking(oastatus).get)
+
+        def printinGUI(a):
+            for i in a.values():
+                if i == 1:
+                    message = 'Ausgeglichen'
+                    print(message)
+                else:
+                    max_key = max(a, key=a.get)
+                    message = str(max_key)
+                    print(message)
+            return message
+
+
+
+
             # Display_Frames
         center_Frame0 = Frame(window, width=800, height=550, bg='grey19')
             # content_Frame = Frame(center_Frame0, width=300, height=200, bg='green')
@@ -448,12 +503,12 @@ def startwindow():
         bottom_button_Frame_forw.grid(row=0, column=2, sticky='e')
 
             # BTNS
-        #weiterbtn = Button(bottom_button_Frame_forw, text='   Weiter   ', command=)
+        weiterbtn = Button(bottom_button_Frame_forw, text='   Programm schließen   ', command= close_window)
         back_btn = Button(bottom_button_Frame_back, text='   Zurück   ', command=secondWindowblue)
 
 
             # BTNS Position
-        #weiterbtn.grid(column=0, row=0, padx=2, pady=5, sticky='nwse')
+        weiterbtn.grid(column=0, row=0, padx=2, pady=5, sticky='nwse')
         back_btn.grid(column=0, row=0,  padx=2, pady=5, sticky='nwse')
 
 
@@ -471,14 +526,27 @@ def startwindow():
         'Disziplinen:'
                           )
 
+
+
+        oa_status_lbl = Label(center_space_Frame_center, bg='white smoke', fg='black', justify=LEFT, text= 'Häufigster OA-Status: ' + '\n' + 'Häufigstes Journal: ' + '\n' + 'Häufigster Publisher')
+        oa_status_lbl_numb = Label(center_space_Frame_center, bg='white smoke', fg='black', justify=LEFT, text= printinGUI(Listen_Ranking(oastatus)) + '\n' + printinGUI(Listen_Ranking(Journals)) + '\n' + printinGUI(Listen_Ranking(Publisher)))
+
+        #journal_lbl = Label(center_space_Frame_center, bg='white smoke', fg='black', justify=LEFT,text='Häufigstes Journal: ')
+
+
+
+
+
+
         resul_numb_lbl_left = Label(center_space_Frame_center, bg='white smoke', fg='black', justify=LEFT, text=str(len(Titel)) + '\n\n' + str(autor_status_count[0]) + '\n' + str(autor_status_count[1]) + '\n' + str(len(Journals)) + '\n' + (str(len(Publisher))) + '\n' + (str(len(re_area))))
 
-        resul_numb_lbl_rigth = Label(center_space_Frame_center, bg='white smoke', fg='black', justify=LEFT, text='')
+        #resul_numb_lbl_rigth = Label(center_space_Frame_center, bg='white smoke', fg='black', justify=LEFT, text='')
         
-        #str(len(Titel) + '\n' + str(autor_status_count[0]) + '\n' + str(autor_status_count[1]))
 
 
 
+        #print(getlist(Listen_Ranking(oastatus))[0])
+        #print(getlist(Listen_Ranking(oastatus))[1])
 
 
 
@@ -486,12 +554,11 @@ def startwindow():
         wel_lbl.grid(row=0, columnspan=3, sticky='w')
         resul_lbl.grid(row=1, column=0, sticky='w')
         resul_numb_lbl_left.grid(row=1, column=1, sticky='w')
-        resul_numb_lbl_rigth.grid(row=1, column=2, sticky='w')
+        #resul_numb_lbl_rigth.grid(row=1, column=2, sticky='w')
 
-
-
-
-
+        oa_status_lbl.grid(row=1, column=3, sticky='nw')
+        oa_status_lbl_numb.grid(row=1, column=4, sticky='nw')
+        #journal_lbl.grid(row=1, column=3, sticky='nw')
 
 
 
@@ -502,7 +569,7 @@ def startwindow():
 
     window = Tk()
     window.geometry('{}x{}'.format(900, 550))
-    window.resizable(0, 0)
+    #window.resizable(0, 0)
     window.title('WOSAT_Alpha')
 
     # Menu
@@ -515,6 +582,7 @@ def startwindow():
     new_item.add_command(label='Programm Schließen', command=close_window)
     menu.add_cascade(label='Datei', menu=new_item)
     window.config(menu=menu)
+
 
     mainWindowGrey()
     #thirdwindow()
