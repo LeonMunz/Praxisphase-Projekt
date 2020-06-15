@@ -19,6 +19,7 @@ from matplotlib.backends.backend_tkagg import (
 # Implement the default Matplotlib key bindings.
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
+from collections import OrderedDict
 
 
 # give value to empty vars
@@ -44,6 +45,7 @@ def startwindow():
         #Sobald ein Pfad gewählt wurde, wird der "witerbtn" aktiviert.
     def selectDir():
         global sdir
+        global data_clean
         sdir = filedialog.askdirectory()
         dir_lbl.configure(text=sdir, fg='green2')
         weiterbtn.configure(text='   Weiter   ', bg='white', fg='black', command=secondWindowblue)
@@ -55,6 +57,120 @@ def startwindow():
                     for line in f:
                         outfile.write(line)
         print('Collection_File_erstelllt')
+
+        # ReGeX Pattern für das Filtern der OA-Status:
+        Other_Gold_regex = re.compile(r'.*Other Gold.*', re.IGNORECASE)
+        DOAJ_Gold_regex = re.compile(r'.*DOAJ Gold.*', re.IGNORECASE)
+        Green_Accepted_regex = re.compile(r'.*Green Accepted.*', re.IGNORECASE)
+        Green_Published_regex = re.compile(r'.*Green Published.*', re.IGNORECASE)
+        Bronze_regex = re.compile(r'.*Bronze.*', re.IGNORECASE)
+
+        data_file = './Zusammengeführte_Files/collection.txt'
+
+        df = pd.read_csv(data_file, sep='\\t', engine='python')
+
+        pd.set_option('display.max_rows', 500)
+        pd.set_option('display.max_columns', 500)
+        pd.set_option('display.width', 1000)
+
+        # NaN Werte zum DataFrame hinzufügen um diese selektieren zu können:
+        df_nan = df.fillna("NaN")
+        # NaN Werte in der Col PY (Jahre) in 0 wandeln
+        df_nan['PY'] = df_nan['PY'].replace('NaN', 0)
+        # Float Werte aus der Col PY (Jahre) in Int wandeln
+        df_nan['PY'] = df_nan['PY'].astype(int)
+
+        # Alle Einträge aus DF herausnehmen die keinen OA-Status haben:
+        data_only_OA = df_nan.loc[df_nan['OA'] != 'NaN']
+
+        # DataFrame anordnen:
+        data_clean = data_only_OA[['TI', 'AF', 'C1', 'RP', 'SC', 'SO', 'FU', 'PU', 'PY', 'DT', 'OA']]
+
+        # Funktion um OA Status zu filtern und in einzelne Listen zu transferieren
+        # Diese werden im Anschluss wieder in einzlene Cols in dem DF untergebracht
+        def collect_oa_status(status):
+            # Listen für den filter der OA-Status:
+            Other_Gold = []
+            DOAJ_Gold = []
+            Green_Accepted = []
+            Green_Published = []
+            Bronze = []
+            for oa_status in status:
+                if Other_Gold_regex.match(oa_status):
+                    Other_Gold.append('True')
+                else:
+                    Other_Gold.append('False')
+                if DOAJ_Gold_regex.match(oa_status):
+                    DOAJ_Gold.append('True')
+                else:
+                    DOAJ_Gold.append('False')
+                if Green_Accepted_regex.match(oa_status):
+                    Green_Accepted.append('True')
+                else:
+                    Green_Accepted.append('False')
+                if Green_Published_regex.match(oa_status):
+                    Green_Published.append('True')
+                else:
+                    Green_Published.append('False')
+                if Bronze_regex.match(oa_status):
+                    Bronze.append('True')
+                else:
+                    Bronze.append('False')
+            return Other_Gold, DOAJ_Gold, Green_Published, Green_Accepted, Bronze
+
+        # Filtern der Erstautor Institution
+        # Angewendet auf die Col "C1"
+        bar = data_clean['C1'].tolist()
+
+
+        def institut(cone):
+            institution = []
+            for eai in cone:
+                pattern = re.findall('\].+,\s', eai)
+                for x in pattern:
+                    x = x.split(',')
+                    x = x[0].replace(']', '')
+                    institution.append(x)
+            return institution
+
+        # Filtern der Reprintautor Institution
+        # Angewendet auf die Col "RP"
+        re_inst_raw = data_clean['RP'].tolist()
+
+        def rp_inst():
+            global rep_inst
+            rep_inst = []
+            for re_inst in re_inst_raw:
+                pattern = re.findall('\),\s.+', re_inst)
+                for x in pattern:
+                    x = x.split(',')
+                    x = x[1]
+                    rep_inst.append(x)
+            return rep_inst
+        rp_inst()
+
+        pattern = re.compile(r']\s([^,]+),')
+        ko_aut_li = []
+
+        for koaut in data_clean['C1']:
+            ko = pattern.findall(koaut)
+            ko_aut_li.append(ko)
+
+        # Erzeugen neuer Columns im DF für Institution des Erstautors:
+        data_clean['EA Institution'] = institut(bar)
+        data_clean['RP Institution'] = rep_inst
+        data_clean['KoAut Institution'] = ko_aut_li
+        # data_clean['Koautor Institution'] = ko_aut_inst
+        # Erzeugen neuer Columns im DF für OA-Status Erstautor:
+        data_clean['Other Gold'] = collect_oa_status(data_clean['OA'])[0]
+        data_clean['DOAJ Gold'] = collect_oa_status(data_clean['OA'])[1]
+        data_clean['Green Published'] = collect_oa_status(data_clean['OA'])[2]
+        data_clean['Green Accepted'] = collect_oa_status(data_clean['OA'])[3]
+        data_clean['Bronze'] = collect_oa_status(data_clean['OA'])[4]
+
+        #print(data_clean)
+
+
 #-----------------------------------------------------------------------------------------------------------------------
     #Funktion zur Auswahl des Pfades für das Ergebnis-File:
     def selectDir_result():
@@ -126,182 +242,140 @@ def startwindow():
         global mix_li
         global ea_li
         global ka_li
-        #Regex-Pattern:
+
+
+        global ea_oa_status_collect
+        global rp_oa_status_collect
+
+        global data_select_inst_ea
+        global data_select_inst_rp
+
+        global gesamte_ea_rows
+        global gesamte_rp_rows
+        #Variablen für Kooperationen:
+        global li_ordered_koop
+        global count_gem_koom_mit_ea
+
+
+
+        # Regex Pattern für die Suche nach der Erstautor Institution:
         Erstautoren_regex = re.compile(r'.*%s.*' % ea, re.IGNORECASE)
-        Koautoren_regex = re.compile(r'.*\s\(Reprint\sAuthor\).*%s.*\.' % ka, re.IGNORECASE)
+        Koautoren_regex = re.compile(r'.*%s.*' % ka, re.IGNORECASE)
 
-        Other_Gold_regex = re.compile(r'.*Other Gold.*', re.IGNORECASE)
-        DOAJ_Gold_regex = re.compile(r'.*DOAJ Gold.*', re.IGNORECASE)
-        Green_Accepted_regex = re.compile(r'.*Green Accepted.*', re.IGNORECASE)
-        Green_Published_regex = re.compile(r'.*Green Published.*', re.IGNORECASE)
-        Bronze_regex = re.compile(r'.*Bronze.*', re.IGNORECASE)
 
-        data_file = './Zusammengeführte_Files/collection.txt'
-
-        df = pd.read_csv(data_file, sep='\\t', engine='python')
-
-        pd.set_option('display.max_rows', 500)
-        pd.set_option('display.max_columns', 500)
-        pd.set_option('display.width', 1000)
-
-        # NaN Werte zum DataFrame hinzufügen um diese selektieren zu können:
-        df_nan = df.fillna("NaN")
-
-        # Alle Einträge aus DF herausnehmen die keinen OA-Status haben:
-        data_only_OA = df_nan.loc[df_nan['OA'] != 'NaN']
-
-        # Abfrage nach Koautoren Regex:
-        data_select_inst_ka = data_only_OA.loc[data_only_OA['RP'].str.match(Koautoren_regex) == True]
-
-        # Abfrage nach Erstautoren Regex:
-        data_select_inst_ea = data_only_OA.loc[data_only_OA['C1'].str.match(Erstautoren_regex) == True]
-
-        # Erstautoren Listen:
-        Titel = data_select_inst_ea['TI'].tolist()
-        Jahr = data_select_inst_ea['PY'].tolist()
-        Monat = data_select_inst_ea['PD'].tolist()
-        Journal = data_select_inst_ea['SO'].tolist()
-        Publisher = data_select_inst_ea['PU'].tolist()
-        Disziplin = data_select_inst_ea['SC'].tolist()
-        Funding = data_select_inst_ea['FU'].tolist()
-        aut_status_ea = []
-
-        Other_Gold = []
-        DOAJ_Gold = []
-        Green_Accepted = []
-        Green_Published = []
-        Bronze = []
-
-        ea_li = [Other_Gold, DOAJ_Gold, Green_Accepted, Green_Published, Bronze]
-
-        for oa_status in data_select_inst_ea['OA']:
-            aut_status_ea.append('Erstautor')
-            if Other_Gold_regex.match(oa_status):
-                Other_Gold.append('True')
-            else:
-                Other_Gold.append('False')
-            if DOAJ_Gold_regex.match(oa_status):
-                DOAJ_Gold.append('True')
-            else:
-                DOAJ_Gold.append('False')
-            if Green_Accepted_regex.match(oa_status):
-                Green_Accepted.append('True')
-            else:
-                Green_Accepted.append('False')
-            if Green_Published_regex.match(oa_status):
-                Green_Published.append('True')
-            else:
-                Green_Published.append('False')
-            if Bronze_regex.match(oa_status):
-                Bronze.append('True')
-            else:
-                Bronze.append('False')
-
-        # Koautoren Listen
-        Titel_ka = data_select_inst_ka['TI'].tolist()
-        Jahr_ka = data_select_inst_ka['PY'].tolist()
-        Monat_ka = data_select_inst_ka['PD'].tolist()
-        Journal_ka = data_select_inst_ka['SO'].tolist()
-        Publisher_ka = data_select_inst_ka['PU'].tolist()
-        Disziplin_ka = data_select_inst_ka['SC'].tolist()
-        Funding_ka = data_select_inst_ka['FU'].tolist()
-        aut_status_ka = []
-
-        Other_Gold_ka = []
-        DOAJ_Gold_ka = []
-        Green_Accepted_ka = []
-        Green_Published_ka = []
-        Bronze_ka = []
-
-        ka_li = [Other_Gold_ka, DOAJ_Gold_ka, Green_Accepted_ka, Green_Published_ka, Bronze_ka]
-
-        for oa_status in data_select_inst_ka['OA']:
-            aut_status_ka.append('Koautor')
-            if Other_Gold_regex.match(oa_status):
-                Other_Gold_ka.append('True')
-            else:
-                Other_Gold_ka.append('False')
-            if DOAJ_Gold_regex.match(oa_status):
-                DOAJ_Gold_ka.append('True')
-            else:
-                DOAJ_Gold_ka.append('False')
-            if Green_Accepted_regex.match(oa_status):
-                Green_Accepted_ka.append('True')
-            else:
-                Green_Accepted_ka.append('False')
-            if Green_Published_regex.match(oa_status):
-                Green_Published_ka.append('True')
-            else:
-                Green_Published_ka.append('False')
-            if Bronze_regex.match(oa_status):
-                Bronze_ka.append('True')
-            else:
-                Bronze_ka.append('False')
-
-        # gemischte Listen:
-        mix_titel = Titel + Titel_ka
-        mix_Jahr = Jahr + Jahr_ka
-        mix_Monat = Monat + Monat_ka
-        mix_Journal = Journal + Journal_ka
-        mix_Publisher = Publisher + Publisher_ka
-        mix_Disziplin = Disziplin + Disziplin_ka
-        mix_Funding = Funding + Funding_ka
-        mix_aut_status = aut_status_ea + aut_status_ka
-
-        mix_Other_Gold = Other_Gold + Other_Gold_ka
-        mix_DOAJ_Gold = DOAJ_Gold + DOAJ_Gold_ka
-        mix_Green_Accepted = Green_Accepted + Green_Accepted_ka
-        mix_Green_Published = Green_Published + Green_Published_ka
-        mix_Bronze = Bronze + Bronze_ka
-
-        mix_li = [mix_Other_Gold, mix_DOAJ_Gold, mix_Green_Accepted, mix_Green_Published, mix_Bronze]
-
-        # Data Frame Build MIX
-        main_list_mix = ({
-            'Titel': mix_titel,
-            'Jahr': mix_Jahr,  # Jahre in INT umwandeln
-            'Monat': mix_Monat,
-            'Other_Gold': mix_Other_Gold,
-            'DOAJ_Gold': mix_DOAJ_Gold,
-            'Green_Accepted': mix_Green_Accepted,
-            'Green_ Published': mix_Green_Published,
-            'Bronze': mix_Bronze,
-            'Journal': mix_Journal,
-            'Publisher': mix_Publisher,
-            'Disziplin': mix_Disziplin,
-            'Funding': mix_Funding,
-            'Autor-Status': mix_aut_status
-        })
-        main_list_ea = ({
-                'Titel': Titel,
-                'Jahr': Jahr, # Jahre in INT umwandeln
-                'Monat': Monat,
-                'Other_Gold': Other_Gold,
-                'DOAJ_Gold': DOAJ_Gold,
-                'Green_Accepted': Green_Accepted,
-                'Green_ Published': Green_Published,
-                'Bronze': Bronze,
-                'Journal': Journal,
-                'Publisher': Publisher,
-                'Disziplin': Disziplin,
-                'Funding': Funding,
-                'Autor-Status': aut_status_ea
-            })
-
-        print(len(Titel), len(Jahr), len(Monat), len(Other_Gold), len(DOAJ_Gold), len(Green_Accepted), len(Green_Published), len(Bronze), len(Journal), len(Publisher), len(Disziplin), len(Funding) )
-        dopplung = 0
-        for x in Titel:
-            for y in Titel_ka:
-                if x == y:
-                    dopplung += 1
-        data_frame = pd.DataFrame(main_list_mix)
-# Write Outfile
         if von is None:
-            data_frame.to_csv(r'./MAINausgabe.csv')
+            # Abfrage nach Erstautoren Regex:
+            # Dataframe für die Analyse über Erstautoren:
+            data_select_inst_ea = data_clean.loc[data_clean['EA Institution'].str.match(Erstautoren_regex) == True]
+            data_select_inst_ea['Aut-Status'] = 'Erstautor'
+
+            # Abfrage nach Reprint-Autoren Regex:
+            # Datafram für die Analyse über Reprintautoren:
+            data_select_inst_rp = data_clean.loc[data_clean['RP Institution'].str.match(Koautoren_regex) == True]
+            data_select_inst_rp['Aut-Status'] = 'Reprint-Autor'
+
             print('Outfile erstellt ohne erweiterte Such-Parameter erstellt')
         else:
-            gather_Date = (data_frame.loc[(data_frame['Jahr'] >= von) & (data_frame['Jahr'] <= bis)])
-            gather_Date.to_csv(r'MAINausgabemitDateSuche.csv')
+            gather_Date = (data_clean.loc[(data_clean['PY'] >= von) & (data_clean['PY'] <= bis)])
+
+            data_select_inst_ea = gather_Date[data_clean['EA Institution'].str.match(Erstautoren_regex) == True]
+            data_select_inst_ea['Aut-Status'] = 'Erstautor'
+
+            data_select_inst_rp = gather_Date[data_clean['EA Institution'].str.match(Koautoren_regex) == True]
+            data_select_inst_rp['Aut-Status'] = 'Reprint-Autor'
+
+
+
+
+
+
+        complete_set = pd.concat([data_select_inst_ea, data_select_inst_rp])
+        complete_set.to_csv('main_ausgabe_file.csv')
+
+        print(complete_set)
+        # OUTFILE ERSTELLEN
+
+        # Die Funktion "count_oa_status" zählt die mit True angegebenen Einträge im DF
+        def count_oa_status(anz):
+            anzahl = 0
+            anzwrong = 0
+            for x in anz:
+                if x == 'True':
+                    anzahl += 1
+                else:
+                    anzwrong = +1
+
+            return anzahl
+
+
+
+
+        ea_other_gold = count_oa_status(data_select_inst_ea['Other Gold'])
+        ea_doaj_gold = count_oa_status(data_select_inst_ea['DOAJ Gold'])
+        ea_green_published = count_oa_status(data_select_inst_ea['Green Published'])
+        ea_green_accepted = count_oa_status(data_select_inst_ea['Green Accepted'])
+        ea_bronze = count_oa_status(data_select_inst_ea['Bronze'])
+
+        rp_other_gold = count_oa_status(data_select_inst_rp['Other Gold'])
+        rp_doaj_gold = count_oa_status(data_select_inst_rp['DOAJ Gold'])
+        rp_green_published = count_oa_status(data_select_inst_rp['Green Published'])
+        rp_green_accepted = count_oa_status(data_select_inst_rp['Green Accepted'])
+        rp_bronze = count_oa_status(data_select_inst_rp['Bronze'])
+
+
+
+        ea_oa_status_collect = [ea_other_gold, ea_doaj_gold, ea_green_published, ea_green_accepted, ea_bronze]
+        rp_oa_status_collect = [rp_other_gold, rp_doaj_gold, rp_green_published, rp_green_accepted, rp_bronze]
+
+        # Variablen um Anzahl im "Result-Window" anzuzeigen:
+        gesamte_ea_rows = len(data_select_inst_ea['TI'])
+        gesamte_rp_rows = len(data_select_inst_rp['TI'])
+
+        mix_rows = gesamte_ea_rows + gesamte_rp_rows
+
+
+        # Filtern der in beiden Kategorien (Erst- Redprint-Autor) vorkommenden Einträge:
+        dopplung = 0
+        for x in data_select_inst_ea['TI']:
+            for y in data_select_inst_rp['TI']:
+                if x == y:
+                    dopplung += 1
+
+        print(data_select_inst_ea)
+
+        # Auswertung der Kooperationen zwischen den Instituten (Erst- Koautor)
+
+        def Listen_Ranking(v):
+            z = 0
+            counter = []
+            for x in v:
+                x = v.count(v[z])
+                z += 1
+                counter.append(x)
+                out = dict(zip(v, counter))
+            return (out)
+
+        #hier muss die liste aus dem df rein das schon gefiltert wurde!!!!!!!!!!!!!!!!
+        collect_koautli = []
+        for x in data_select_inst_ea['KoAut Institution'].tolist():
+            for y in x:
+                collect_koautli.append(y)
+
+        sortierte_koop = OrderedDict(sorted(Listen_Ranking(collect_koautli).items(), key=lambda x: x[1], reverse=True))
+
+        #Liste zur Ausgabe der nach häufigkeit sortierten meisten Kooperationen
+        li_ordered_koop = []
+        count_gem_koom_mit_ea = 0
+        for b in sortierte_koop:
+            li_ordered_koop.append(b)
+            if Erstautoren_regex.match(b):
+                count_gem_koom_mit_ea += 1
+
+        print(count_gem_koom_mit_ea)
+
+
+
+
 
 
 
@@ -763,17 +837,17 @@ def startwindow():
         def mix_val_pie():
         # Values for PieChart
             labels = ['Other Gold', 'DOAJ Gold', 'Green Published', 'Green Accepted', 'Bronze']
-            sizes = len(pie_present(mix_li[0])),\
-                    len(pie_present(mix_li[1])),\
-                    len(pie_present(mix_li[2])),\
-                    len(pie_present(mix_li[3])),\
-                    len(pie_present(mix_li[4]))
+            sizes = ea_oa_status_collect[0], \
+                    ea_oa_status_collect[1], \
+                    ea_oa_status_collect[2], \
+                    ea_oa_status_collect[3], \
+                    ea_oa_status_collect[4]
 
             colors = ['#f5ff21', '#fffb87', '#4dde93', '#67de4d', '#dea94d']
             plt.rcParams['font.size'] = 6.0
             fig1, ax1 = plt.subplots()
 
-            patches, texts, autotexts = ax1.pie(sizes, colors=colors, labels=labels, autopct='%1.1f%%',startangle=90)
+            patches, texts, autotexts = ax1.pie(sizes, colors=colors, labels=labels, autopct='%d', startangle=90)
 
             for text in texts:
                 text.set_color('white')
@@ -783,7 +857,7 @@ def startwindow():
             centre_circle = plt.Circle((0, 0), 0.70, fc='darkslategrey')
             fig = plt.gcf()
 
-            plt.title('Open Access Status EA + KA', color='white')
+            plt.title('Erstautor OA-Status Verteilung', color='white')
 
             fig.gca().add_artist(centre_circle)
             fig.patch.set_facecolor('darkslategrey')
@@ -797,17 +871,17 @@ def startwindow():
         def ea_pie():
             # Values for PieChart
             labels = ['Other Gold', 'DOAJ Gold', 'Green Published', 'Green Accepted', 'Bronze']
-            sizes = len(pie_present(ea_li[0])), \
-                    len(pie_present(ea_li[1])), \
-                    len(pie_present(ea_li[2])), \
-                    len(pie_present(ea_li[3])), \
-                    len(pie_present(ea_li[4]))
+            sizes = rp_oa_status_collect[0], \
+                    rp_oa_status_collect[1], \
+                    rp_oa_status_collect[2], \
+                    rp_oa_status_collect[3], \
+                    rp_oa_status_collect[4]
 
             colors = ['#f5ff21', '#fffb87', '#4dde93', '#67de4d', '#dea94d']
             plt.rcParams['font.size'] = 6.0
             fig1, ax1 = plt.subplots()
 
-            patches, texts, autotexts = ax1.pie(sizes, colors=colors, labels=labels, autopct='%1.1f%%', startangle=90)
+            patches, texts, autotexts = ax1.pie(sizes, colors=colors, labels=labels, autopct='%d', startangle=90)
 
             for text in texts:
                 text.set_color('white')
@@ -817,7 +891,7 @@ def startwindow():
             centre_circle = plt.Circle((0, 0), 0.70, fc='darkslategrey')
             fig = plt.gcf()
 
-            plt.title('Open Access Status Erstautoren', color='white')
+            plt.title('Reprint-Autor OA-Status Verteilung', color='white')
 
             fig.gca().add_artist(centre_circle)
             fig.patch.set_facecolor('darkslategrey')
@@ -831,11 +905,11 @@ def startwindow():
         def ka_pie():
             # Values for PieChart
             labels = ['Other Gold', 'DOAJ Gold', 'Green Published', 'Green Accepted', 'Bronze']
-            sizes = len(pie_present(ka_li[0])), \
-                    len(pie_present(ka_li[1])), \
-                    len(pie_present(ka_li[2])), \
-                    len(pie_present(ka_li[3])), \
-                    len(pie_present(ka_li[4]))
+            sizes = rp_oa_status_collect[0], \
+                    rp_oa_status_collect[1], \
+                    rp_oa_status_collect[2], \
+                    rp_oa_status_collect[3], \
+                    rp_oa_status_collect[4]
 
             colors = ['#f5ff21', '#fffb87', '#4dde93', '#67de4d', '#dea94d']
             plt.rcParams['font.size'] = 6.0
@@ -851,7 +925,7 @@ def startwindow():
             centre_circle = plt.Circle((0, 0), 0.70, fc='darkslategrey')
             fig = plt.gcf()
 
-            plt.title('Open Access Status Koautoren', color='white')
+            plt.title('Das hier nnmuss weg', color='white')
 
             fig.gca().add_artist(centre_circle)
             fig.patch.set_facecolor('darkslategrey')
@@ -970,35 +1044,43 @@ def startwindow():
     # Results LBL:
         ea_sum_lbl = Label(center_Frame_left, bg='grey16', fg='white smoke', text='Erstautoren der Institution:  ' + str(ea))
         ka_sum_lbl = Label(center_Frame_left, bg='grey16', fg='white smoke', text='Koautoren der Institution:  ' + str(ka))
-        dopp_sum_lbl = Label(center_Frame_left, bg='grey16', fg='white smoke', text='Dopplungen: \n')
+        dopp_sum_lbl = Label(center_Frame_left, bg='grey16', fg='white smoke', text='Dopplungen:')
+        koop_anz_lbl = Label(center_Frame_left, bg='grey16', fg='white smoke', text='Kooperation mit: ' + str(ea))
 
 
         #Result Position LBL:
         ea_sum_lbl.grid(row=0, column=0, sticky='w')
         ka_sum_lbl.grid(row=1, column=0, sticky='w')
         dopp_sum_lbl.grid(row=2, column=0, sticky='w')
+        koop_anz_lbl.grid(row=3, column=0, sticky='w')
     #Chart BTNs:
-        pie_chart_mix_btn = Button(center_Frame_left_bottom_one, text=' EA + KA ', command=mix_val_pie)
-        pie_chart_ea_btn = Button(center_Frame_left_bottom_one, text='Erstautor ', command=ea_pie)
-        pie_chart_ka_btn = Button(center_Frame_left_bottom_one, text=' Koautor  ', command=ka_pie)
+        pie_chart_mix_btn = Button(center_Frame_left_bottom_one, text=' Erstautor ', command=mix_val_pie)
+        pie_chart_ea_btn = Button(center_Frame_left_bottom_one, text=' Reprint-Autor ', command=ea_pie)
+
+        koop_li_btn = Button(center_Frame_left_bottom_one, text=' Kooperationen ', command=mix_val_pie)
+
 
     # Chart BTNs Position:
         pie_chart_mix_btn.grid(row=1, column=0, pady=2, sticky='w')
         pie_chart_ea_btn.grid(row=2, column=0, sticky='w')
-        pie_chart_ka_btn.grid(row=3, column=0, pady=2,  sticky='w')
+        koop_li_btn.grid(row=3, column=0, sticky='w')
+
 
     # Results VALUEs
-        ea_sum_val = Label(center_Frame_mid,bg='white smoke', fg='black', text=str(len(Titel)))
-        ka_sum_val = Label(center_Frame_mid, bg='white smoke', fg='black', text=str(len(Titel_ka)))
-        dopp_sum_lbl = Label(center_Frame_mid, bg='white smoke', fg='black', text=str(dopplung))
 
-        pie_desc_lbl = Label(center_Frame_left_bottom_one,bg='grey16', fg='white smoke', text='OA-Status PieCharts:')
+        ea_sum_val = Label(center_Frame_mid, bg='white smoke', fg='black', text=str(gesamte_ea_rows))
+        ka_sum_val = Label(center_Frame_mid, bg='white smoke', fg='black', text=str(gesamte_rp_rows))
+        dopp_sum_val = Label(center_Frame_mid, bg='white smoke', fg='black', text=str(dopplung))
+        anz_koop_val = Label(center_Frame_mid, bg='white smoke', fg='black', text=str(count_gem_koom_mit_ea))
+
+        pie_desc_lbl = Label(center_Frame_left_bottom_one, bg='grey16', fg='white smoke', text='OA-Status PieCharts:')
 
         pie_desc_lbl.grid(row=0, column=0, sticky='w')
     # Results VALUEs Position:
         ea_sum_val.grid(row=0, column=0, sticky='w')
         ka_sum_val.grid(row=1, column=0, sticky='w')
-        dopp_sum_lbl.grid(row=2, column=0, sticky='w')
+        dopp_sum_val.grid(row=2, column=0, sticky='w')
+        anz_koop_val.grid(row=3, column=0, sticky='w')
 
     # Setup for Piechart:
     # PieChart Built in
@@ -1012,18 +1094,18 @@ def startwindow():
         def mix_val_pie():
         # Values for PieChart
             labels = ['Other Gold', 'DOAJ Gold', 'Green Published', 'Green Accepted', 'Bronze']
-            sizes = len(pie_present(mix_li[0])),\
-                    len(pie_present(mix_li[1])),\
-                    len(pie_present(mix_li[2])),\
-                    len(pie_present(mix_li[3])),\
-                    len(pie_present(mix_li[4]))
+            sizes = ea_oa_status_collect[0], \
+                    ea_oa_status_collect[1], \
+                    ea_oa_status_collect[2], \
+                    ea_oa_status_collect[3], \
+                    ea_oa_status_collect[4]
 
 
             colors = ['#f5ff21', '#fffb87', '#4dde93', '#67de4d', '#dea94d']
             plt.rcParams['font.size'] = 6.0
             fig1, ax1 = plt.subplots()
 
-            patches, texts, autotexts = ax1.pie(sizes, colors=colors, labels=labels, autopct='%1.1f%%',startangle=90)
+            patches, texts, autotexts = ax1.pie(sizes, colors=colors, labels=labels, autopct='%d', startangle=90)
 
             for text in texts:
                 text.set_color('white')
@@ -1033,14 +1115,14 @@ def startwindow():
             centre_circle = plt.Circle((0, 0), 0.70, fc='darkslategrey')
             fig = plt.gcf()
 
-            plt.title('Open Access Status EA + KA', color='white')
+            plt.title('Erstautor OA-Status Verteilung', color='white')
 
             fig.gca().add_artist(centre_circle)
             fig.patch.set_facecolor('darkslategrey')
             fig.set_size_inches(4, 3)
             ax1.axis('equal')
 
-            #plt.tight_layout()
+            plt.tight_layout()
 
             canvas = FigureCanvasTkAgg(fig, center_Frame_right)
             canvas.get_tk_widget().grid(row=0, column=0)
