@@ -1,57 +1,94 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jul 29 20:46:17 2019
-@author: lmunz
-"""
 
-import json
+
+    
+
+import bs4
+import requests
 import csv
+import json
+import codecs
+resource = requests.get('https://de.wikipedia.org/wiki/Liste_der_erfolgreichsten_Computerspiele')#Übergabe der URL an bs4
+gamesSoup = bs4.BeautifulSoup(resource.content, 'html.parser')                 #Parsen von der Quelle
+elemNames = gamesSoup.select('td i a')                          #Auswahl des Inhalts aller Daten in td, i, a
 
-with open('movie_data.json') as data_read:                  #öffnen des json-Files
-    data = json.load(data_read)
-    
-    dictIo = {}                                             #Erstelle leeres Dict
-    genres  =[]                                             #Erstelle leere Liste
-    
-    for dates in data:                                      #For-Schleife um alle Keys des ersten Dicts zu iterieren
-        for name in data[dates]:                            #For-Schleife um innerhalb des ersten Dicts die Film Namen zu iterieren
-            genre = data[dates][name].get('genre')          #Erzeugt Listen mit den Genres
-            for x in genre:                                 #For-Schleife um die die Genres zu iterieren
-                genres.append(x)                            #Hinzufügen der einzelnen Genres, zur Liste "genre"
-                #print(genres)
-    genres = list(set(genres))
-    genres = list(filter(None, genres))
-    
-    
-    for dates in data:                                      #For-Schleife um alle Keys des ersten Dicts zu iterieren
-        genreInYear = {}
-        for name in data[dates]:                            #For-Schleife um innerhalb des ersten Dicts die Film Namen zu iterieren
-            genre2 = data[dates][name].get('genre')         #Erzeugt Listen mit den Genres
-            
-            for gen in genre2:
-                if gen in genreInYear:
-                    genreInYear[gen] += 1
-                else:
-                    genreInYear[gen] = 1
-            for z in genres:
-                if z not in genreInYear:
-                    genreInYear[z] = 0
+
+spieleList = []                                                 #Erstellen einer leeren Liste, um dort im folgenden Schritt die Namen der Elemente der Liste zwischen zu speichern
+for element in elemNames:                                       #For schleife um die ressource zu durchlaufen
+    spieleNamen = element.string                                #Umwandeln der ressource in einen String
+    spieleList.append(spieleNamen)                              #Jeden einzelnen String in die Liste als erinzelnes Element einfügen
+
+#print(spieleList)
+
+urlList = []                                                    #Erstellen einer leeren Liste um dort die URL`s zwischen zu speichern
+for url in elemNames:                                           #For-Schleife um alle URL`s zu durchlaufen
+    gameUrl = 'https://de.wikipedia.org' + url.get('href')      #abrufen der Daten welche sich innerhalb von href befinden und anhängen des Links, damit dieser eine aufrufbare URL ergibt
+    urlList.append(gameUrl)                                     #Einfügen des entstandenen Strings in die Liste der URL´S
+
+#print(urlList)
+
+csvDict = dict(zip(spieleList, urlList))                        #Umwandeln der beiden Listen in als Key, Val Paare in ein Dict
+#print(csvDict)
+
+with open('ex04table.csv', 'w') as f:                                #Öffnen der zu beschreibenden CSV-Datei
+    for key in csvDict.keys():                                  #For-Schleife um das dict zu durchlaufen und die Einträge in die CSV-Datei zu schreiben
+        f.write("%s,%s\n"%(key,csvDict[key]))                   #schreiben der CSV-Datei
+
+
+
+
+infoBox = {}                                                    #Erstellen eines leeren Dicts für die Json-Datei
+for i in csvDict.keys():                                        #For-Schleife
+    infoBox[i] = {}
+
+
+
+for y,i in csvDict.items():                                                                      
+                                                  
+        #Info-Box PUBLISHER
+        zug = requests.get(i)                                     
+        nfoSoup = bs4.BeautifulSoup(zug.content,'html.parser')  #Parsen der Daten
+        pubs=[]                                                 #Erstelle leere Liste für die Publisher
+        try:
+            sel = nfoSoup.find('a', text='Publisher').parent.next_sibling.select('a')#Versuch die Daten aus dem Feld Publisher zu ziehen
+        except:
+            continue                                            #Falls keine Publisher Daten vorhanden sind, weiter.
+        for x in sel:                                           #For-Schleife um die Publisher zu scrapen
+            pubs.append(x.string)                               #Hinzufügen der Publisher in die Liste der Publisher
+            infoBox[y]['publisher'] = pubs                      #Hinzufügen des Publishers zum Dict
                     
-                    
-        dictIo[dates] = genreInYear
-    #print(dictIo)
+            #print(publisher)
+
+                                           
     
-genres.sort()
-header = []
-header.extend(genres)
-header.insert(0, 'Year')    
-with open('test.csv','w', newline='') as file:
-    csvWriter = csv.writer(file)
-    csvWriter.writerow(header)
+        #Info-Box PLATTFORM                                     #Selbe Funktionen wie in der ersten Info-Box
+        zug2 = requests.get(i)
+        nfoSoup2 = bs4.BeautifulSoup(zug2.content,'html.parser')
+        plat =[]
+        try:
+            sel2 = nfoSoup2.find('a', text='Plattform').parent.next_sibling.select('a')
+        except:
+            continue
+        for d in sel2:
+            plat.append(d.string)
+            infoBox[y]['plattform'] = plat
+                
+
+                                                
     
-    for x in dictIo:
-        line = []
-        for y in genres:
-            line.append(dictIo[x].get(y,0))
-        line.insert(0,int(x))
-        csvWriter.writerow(line)
+        #Info-Box GENRE                                        #Selbe Funktionen wie in der ersten Info-Box
+        zug3 = requests.get(i)
+        nfoSoup3 = bs4.BeautifulSoup(zug3.content,'html.parser')
+        gen=[]
+        try:
+            sel3 = nfoSoup3.find('a', text='Genre').parent.next_sibling.select('a')
+        except:
+            continue
+        for z in sel3:
+            gen.append(z.string)
+            infoBox[y]['genre'] = gen
+                #print(genre)
+#print(infoBox)
+
+with codecs.open('SpieleListe.json','w','UTF-8-sig') as file2:#Öffnen und erstellen der .json Datei (ResultFile)
+    file2.write(json.dumps(infoBox, indent =4, ensure_ascii=False))#Schreiben des Dicts in dieses File, ausgabe als.json
