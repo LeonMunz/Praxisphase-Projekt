@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul 29 20:46:17 2019
+@author: lmunz
+"""
+
+import json
+import csv
+
+with open('movie_data.json') as data_read:                  #öffnen des json-Files
+    data = json.load(data_read)
+    
+    dictIo = {}                                             #Erstelle leeres Dict
+    genres  =[]                                             #Erstelle leere Liste
+    
+    for dates in data:                                      #For-Schleife um alle Keys des ersten Dicts zu iterieren
+        for name in data[dates]:                            #For-Schleife um innerhalb des ersten Dicts die Film Namen zu iterieren
+            genre = data[dates][name].get('genre')          #Erzeugt Listen mit den Genres
+            for x in genre:                                 #For-Schleife um die die Genres zu iterieren
+                genres.append(x)                            #Hinzufügen der einzelnen Genres, zur Liste "genre"
+                #print(genres)
+    genres = list(set(genres))
+    genres = list(filter(None, genres))
+    
+    
+    for dates in data:                                      #For-Schleife um alle Keys des ersten Dicts zu iterieren
+        genreInYear = {}
+        for name in data[dates]:                            #For-Schleife um innerhalb des ersten Dicts die Film Namen zu iterieren
+            genre2 = data[dates][name].get('genre')         #Erzeugt Listen mit den Genres
+            
+            for gen in genre2:
+                if gen in genreInYear:
+                    genreInYear[gen] += 1
+                else:
+                    genreInYear[gen] = 1
+            for z in genres:
+                if z not in genreInYear:
+                    genreInYear[z] = 0
+                    
+                    
+        dictIo[dates] = genreInYear
+    #print(dictIo)
+    
+genres.sort()
+header = []
+header.extend(genres)
+header.insert(0, 'Year')    
+with open('test.csv','w', newline='') as file:
+    csvWriter = csv.writer(file)
+    csvWriter.writerow(header)
+    
+    for x in dictIo:
+        line = []
+        for y in genres:
+            line.append(dictIo[x].get(y,0))
+        line.insert(0,int(x))
+        csvWriter.writerow(line)
